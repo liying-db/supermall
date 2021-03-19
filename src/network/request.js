@@ -7,7 +7,7 @@ export function request(config) {
   })
 
   instance.interceptors.response.use(res => res.data, err => {
-    console.lof(err)
+    console.log(err)
   })
 
   return instance(config)
