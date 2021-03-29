@@ -12,3 +12,12 @@ export function request(config) {
 
   return instance(config)
 }
+
+export function request1(config) {
+  const instance = new axios.create({
+    baseURL: ';;;',
+    timeout: '400'
+  })
+
+  return instance(config)
+}

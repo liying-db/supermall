@@ -103,7 +103,7 @@ export default {
   },
   deactivated() {
      this.saveY = this.$refs.scroll.scroll.y
-     console.log(this.saveY)
+    //  console.log(this.saveY)
   },
   mounted() {
     const refresh = debounce(this.$refs.scroll.refresh, 20);
@@ -172,7 +172,7 @@ export default {
 .home {
   /* padding-top: 44px; */
   height: 100vh;
-  /* position: relative; */
+  position: relative;
 }
 .home-nav {
   /* position: fixed;
@@ -186,7 +186,7 @@ export default {
 .content {
   /* height: calc(100% - 93px); */
   overflow: hidden;
-  height: 100%;
+  /* height: 100%; */
   position: absolute;
   top: 44px;
   bottom: 49px;
