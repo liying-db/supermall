@@ -1,15 +1,27 @@
 <template>
   <div class="detail">
-    <detail-nav-bar class="detail-bar"/>
-    <scroll class="detail-content" ref="scroll">
+    <detail-nav-bar
+      class="detail-bar"
+      @detailTitleClick="detailTitleClick"
+      ref="detailBar"
+    />
+    <scroll
+      class="detail-content"
+      ref="scroll"
+      @scroll="detailScroll"
+      :probe-type="3"
+      :pull-up-load="true"
+    >
       <detail-swiper :topImages="topImages" />
       <detail-base-info :goods="goods" />
-      <detail-shop-info :shop="shop"/>
-      <detail-goods-info :detail-info="detailInfo" @imgLoad="imgLoad"/>
-      <detail-param-info :param-info="paramInfo" />
-      <detail-comment-info :comment-info="commentInfo" />
-      <goods-list :goods="recommendInfo" />
+      <detail-shop-info :shop="shop" />
+      <detail-goods-info :detail-info="detailInfo" @imageLoad="imageLoad" />
+      <detail-param-info ref="params" :param-info="paramInfo" />
+      <detail-comment-info ref="comments" :comment-info="commentInfo" />
+      <goods-list ref="recommends" :goods="recommendInfo" />
     </scroll>
+    <detail-bottom-bar />
+    <back-top @click.native="scrollTo" v-show="isShow"></back-top>
   </div>
 </template>
 
@@ -20,12 +32,21 @@ import DetailShopInfo from "./childComponent/DetailShopInfo";
 import DetailBaseInfo from "./childComponent/DetailBaseInfo";
 import DetailGoodsInfo from "./childComponent/DetailGoodsInfo";
 import DetailParamInfo from "./childComponent/DetailParamInfo";
-import DetailCommentInfo from "./childComponent/DetailCommentInfo"
-import Scroll from 'components/common/scroll/Scroll'
-import GoodsList from "components/content/goods/GoodsList"
-import { getDetail, Goods, Shop, GoodsParam, getRecommend } from "network/detail";
+import DetailCommentInfo from "./childComponent/DetailCommentInfo";
+import DetailBottomBar from "./childComponent/DetailBottomBar";
+import Scroll from "components/common/scroll/Scroll";
+import GoodsList from "components/content/goods/GoodsList";
+import {
+  getDetail,
+  Goods,
+  Shop,
+  GoodsParam,
+  getRecommend,
+} from "network/detail";
+import { itemListenerMIxin, topBackMixin } from "common/mixin";
 export default {
   name: "Detail",
+  mixins: [itemListenerMIxin, topBackMixin],
   components: {
     DetailNavBar,
     DetailSwiper,
@@ -34,6 +55,7 @@ export default {
     DetailGoodsInfo,
     DetailParamInfo,
     DetailCommentInfo,
+    DetailBottomBar,
     GoodsList,
     Scroll
   },
@@ -47,7 +69,9 @@ export default {
       detailInfo: {},
       paramInfo: {},
       commentInfo: {},
-      recommendInfo: []
+      recommendInfo: [],
+      themeTopYs: [],
+      currentIndex: 0
     };
   },
   created() {
@@ -69,26 +93,74 @@ export default {
       // 获取商家信息
       this.shop = new Shop(data.shopInfo);
       // 获取商品详细信息
-      this.detailInfo = data.detailInfo
+      this.detailInfo = data.detailInfo;
       // 获取商品参数信息
-      this.paramInfo = new GoodsParam(data.itemParams.info, data.itemParams.rule)
+      this.paramInfo = new GoodsParam(
+        data.itemParams.info,
+        data.itemParams.rule
+      );
       // 获取商品评论数据
-      if(data.rate.cRate > 0) {
-        this.commentInfo = data.rate.list[0]
+      if (data.rate.cRate > 0) {
+        this.commentInfo = data.rate.list[0];
       }
-      
+
+      // 这里获取值有问题，图片加载完成后，获取的高度才是正确的
+      // this.$nextTick(() => {
+      //   this.themeTopYs = [];
+      //   this.themeTopYs.push(0);
+      //   this.themeTopYs.push(this.$refs.params.$el.offsetTop);
+      //   this.themeTopYs.push(this.$refs.comments.$el.offsetTop);
+      //   this.themeTopYs.push(this.$refs.recommends.$el.offsetTop);
+
+      //   console.log(this.themeTopYs);
+      // });
     });
 
     // 获取推荐数据
-    getRecommend().then(res => {
-      this.recommendInfo = res.data.list
-    })
+    getRecommend().then((res) => {
+      this.recommendInfo = res.data.list;
+    });
+  },
+  mounted() {
+    // console.log("detail");
   },
   methods: {
-    imgLoad() {
-      this.$refs.scroll.refresh()
+    imageLoad() {
+      this.$refs.scroll.refresh();
+      this.themeTopYs = [];
+      this.themeTopYs.push(0);
+      this.themeTopYs.push(this.$refs.params.$el.offsetTop - 44);
+      this.themeTopYs.push(this.$refs.comments.$el.offsetTop - 44);
+      this.themeTopYs.push(this.$refs.recommends.$el.offsetTop - 44);
+      this.themeTopYs.push(Number.MAX_VALUE);
+      console.log(this.themeTopYs);
+      // console.log(this.themeTopYs);
+    },
+    detailTitleClick(index) {
+      this.$refs.scroll.scrollTo(0, -this.themeTopYs[index], 100);
+    },
+    detailScroll(position) {
+      const positionY = -position.y;
+      const length = this.themeTopYs.length;
+      for (let i = 0; i < length - 1; i++) {
+        if (
+          this.currentIndex !== i &&
+          positionY >= this.themeTopYs[i] &&
+          positionY < this.themeTopYs[i + 1]
+        ) {
+          this.currentIndex = i;
+          console.log(this.currentIndex);
+          this.$refs.detailBar.currentIndex = this.currentIndex;
+        }
+      }
+
+       // 判断回到顶部图标是否显示
+      this.isShow = -position.y > 1000;
     }
-  }
+  },
+  destroyed() {
+    this.$bus.$on("imgLoad", this.itemImgLisener);
+  },
 };
 </script>
 <style scoped>
@@ -104,7 +176,7 @@ export default {
   background-color: #fff;
 }
 .detail-content {
-  height: calc(100% - 44px);
+  height: calc(100% - 102px);
   overflow: hidden;
 }
 </style>

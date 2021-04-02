@@ -28,7 +28,7 @@
   </div>
 </template>
 <script>
-import { formatDate } from "../../../utils/formatDate";
+import { formatDate } from "../../../common/formatDate";
 export default {
   name: "DetailCommentInfo",
   props: {
