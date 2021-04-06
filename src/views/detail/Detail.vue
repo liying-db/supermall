@@ -20,7 +20,7 @@
       <detail-comment-info ref="comments" :comment-info="commentInfo" />
       <goods-list ref="recommends" :goods="recommendInfo" />
     </scroll>
-    <detail-bottom-bar />
+    <detail-bottom-bar @addToCart="addToCart" />
     <back-top @click.native="scrollTo" v-show="isShow"></back-top>
   </div>
 </template>
@@ -34,8 +34,11 @@ import DetailGoodsInfo from "./childComponent/DetailGoodsInfo";
 import DetailParamInfo from "./childComponent/DetailParamInfo";
 import DetailCommentInfo from "./childComponent/DetailCommentInfo";
 import DetailBottomBar from "./childComponent/DetailBottomBar";
+
 import Scroll from "components/common/scroll/Scroll";
 import GoodsList from "components/content/goods/GoodsList";
+
+import { mapActions } from "vuex";
 import {
   getDetail,
   Goods,
@@ -57,7 +60,7 @@ export default {
     DetailCommentInfo,
     DetailBottomBar,
     GoodsList,
-    Scroll
+    Scroll,
   },
   data() {
     return {
@@ -71,7 +74,7 @@ export default {
       commentInfo: {},
       recommendInfo: [],
       themeTopYs: [],
-      currentIndex: 0
+      currentIndex: 0,
     };
   },
   created() {
@@ -80,7 +83,7 @@ export default {
 
     // 获取当前商品的信息
     getDetail(this.id).then((res) => {
-      console.log(res);
+      // console.log(res);
       const data = res.result;
       // 获取商品轮播图
       this.topImages = data.itemInfo.topImages;
@@ -125,6 +128,7 @@ export default {
     // console.log("detail");
   },
   methods: {
+    ...mapActions(["addCart"]),
     imageLoad() {
       this.$refs.scroll.refresh();
       this.themeTopYs = [];
@@ -133,7 +137,7 @@ export default {
       this.themeTopYs.push(this.$refs.comments.$el.offsetTop - 44);
       this.themeTopYs.push(this.$refs.recommends.$el.offsetTop - 44);
       this.themeTopYs.push(Number.MAX_VALUE);
-      console.log(this.themeTopYs);
+      // console.log(this.themeTopYs);
       // console.log(this.themeTopYs);
     },
     detailTitleClick(index) {
@@ -154,9 +158,27 @@ export default {
         }
       }
 
-       // 判断回到顶部图标是否显示
+      // 判断回到顶部图标是否显示
       this.isShow = -position.y > 1000;
-    }
+    },
+    addToCart() {
+      const product = {};
+      product.id = this.id;
+      product.imgURL = this.topImages[0];
+      product.title = this.goods.title;
+      product.desc = this.goods.desc;
+      product.price = this.goods.realPrice;
+
+      // this.$store.commit('addCart', product)
+
+      // this.$store.dispatch("addCart", product).then((res) => {
+      //   console.log(res);
+      // });
+
+      this.addCart(product).then((res) => {
+        this.$toast.show(res, 2000)
+      });
+    },
   },
   destroyed() {
     this.$bus.$on("imgLoad", this.itemImgLisener);
